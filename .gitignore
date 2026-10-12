@@ -1,0 +1,47 @@
+# dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+build/
+.pytest_cache/
+.coverage
+.mypy_cache/
+.ruff_cache/
+
+# PyInstaller build output (single-file exe lives here).
+# Releases now publish binaries via GitHub Releases, so these stay
+# out of git history going forward.
+dist/
+# Allow frontend/dist to be tracked (already committed earlier)
+!frontend/dist/
+
+# Windows installer output.  Same as above — binaries ship via
+# GitHub Releases.  installer.iss source stays tracked.
+installer/
+!installer/installer.iss
+
+# runtime data
+data/
+exe_data/
+backups/
+*.db
+*.sqlite
+
+# superpowers session state (UI mockups from brainstorming)
+.superpowers/
+
+# git worktrees (isolated dev workspaces)
+.worktrees/
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.local
