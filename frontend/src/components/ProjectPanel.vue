@@ -49,10 +49,10 @@
  </button>
  <div class="flex gap-2 ml-auto">
  <button @click="onCancel" class="px-3 py-1.5 rounded-lg bg-black/5 dark:bg-white/10 text-sm font-medium">取消</button>
- <button @click="onSave" :disabled="!form.name.trim()"
- class="px-3 py-1.5 rounded-lg bg-apple-blue text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
- 保存
- </button>
+    <button @click="onSave" :disabled="!form.name.trim() || saving"
+    class="px-3 py-1.5 rounded-lg bg-apple-blue text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+    {{ saving ? '保存中…' : '保存' }}
+    </button>
  </div>
  </div>
  </GlassCard>
@@ -62,24 +62,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import GlassCard from '@/components/GlassCard.vue'
-import { projectsApi } from '@/api/client'
+import { useProjectsStore } from '@/stores/projects'
 import type { Project } from '@/api/types'
 
 const props = defineProps<{
- open: boolean
- project: Project | null
+  open: boolean
+  project: Project | null
 }>()
 const emit = defineEmits<{
- (e: 'close'): void
- (e: 'saved', project: Project): void
- (e: 'deleted', id: number): void
+  (e: 'close'): void
+  (e: 'saved', project: Project): void
+  (e: 'deleted', id: number): void
 }>()
+
+const projects = useProjectsStore()
 
 const presetColors = ['#0071e3', '#34c759', '#ff9500', '#af52de', '#ff3b30', '#8e8e93']
 
-const isEditing = !!props.project
+const isEditing = computed(() => !!props.project)
+const saving = ref(false)
 
 const form = ref({
  name: '', color: '#0071e3',
@@ -122,35 +125,35 @@ onMounted(() => window.addEventListener('keydown', onKey))
 onUnmounted(() => window.removeEventListener('keydown', onKey))
 
 async function onSave() {
- if (!form.value.name.trim()) return
- const payload = {
- name: form.value.name.trim(),
- color: form.value.color,
- description: form.value.description.trim() || null,
- start_date: form.value.start_date || null,
- end_date: form.value.end_date || null,
- }
- try {
- let saved: Project
- if (props.project) {
- saved = await projectsApi.update(props.project.id, payload)
- } else {
- saved = await projectsApi.create(payload)
- }
- emit('saved', saved)
- emit('close')
- } catch { /* interceptor alerts */ }
+  if (saving.value) return
+  if (!form.value.name.trim()) return
+  saving.value = true
+  const payload = {
+    name: form.value.name.trim(),
+    color: form.value.color,
+    description: form.value.description.trim() || null,
+    start_date: form.value.start_date || null,
+    end_date: form.value.end_date || null,
+  }
+  try {
+    const saved: Project = props.project
+      ? await projects.update(props.project.id, payload)
+      : await projects.create(payload)
+    emit('saved', saved)
+    emit('close')
+  } catch { /* interceptor alerts */ }
+  finally { saving.value = false }
 }
 
 function onCancel() { emit('close') }
 
 async function onDelete() {
- if (!props.project) return
- if (!window.confirm(`删除项目"${props.project.name}"? 所有任务和费用将一并删除`)) return
- const id = props.project.id
- await projectsApi.remove(id)
- emit('deleted', id)
- emit('close')
+  if (!props.project) return
+  if (!window.confirm(`删除项目"${props.project.name}"? 所有任务和费用将一并删除`)) return
+  const id = props.project.id
+  await projects.remove(id)
+  emit('deleted', id)
+  emit('close')
 }
 </script>
 

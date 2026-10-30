@@ -13,6 +13,7 @@ export interface Project {
   start_date: string | null
   end_date: string | null
   status: ProjectStatus
+  task_count: number
   created_at: string
   updated_at: string
 }
